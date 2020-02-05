@@ -1,0 +1,92 @@
+  #include <WiFi.h>
+
+#include <SPI.h>
+#include <LoRa.h>
+#include <HTTPClient.h>
+
+#define WIFI_SSID "XXXXXXXXXXX"
+#define WIFI_PASSWORD "XXXXXXXXXXXXXX"
+
+
+void setup()
+{
+
+  Serial.begin(115200);
+
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  Serial.print("Connecting to Wi-Fi");
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    Serial.print(".");
+    delay(300);
+  }
+  Serial.println();
+  Serial.print("Connected with IP: ");
+  Serial.println(WiFi.localIP());
+  Serial.println();
+
+
+
+  Serial.println("LoRa Receiver Callback");
+
+ SPI.begin(5,19,27,18);
+  LoRa.setPins(18,14,26);
+
+  if (!LoRa.begin(433E6)) {
+    Serial.println("Starting LoRa failed!");
+    while (1);
+  }
+
+ 
+
+} 
+  
+
+void loop()
+{
+if (WiFi.status() == WL_CONNECTED)
+{
+ String payload;
+HTTPClient http;
+http.begin("http://griet.in/gcap/getheater.php");
+int httpCode=http.GET();
+if(httpCode > 0)
+{
+ 
+  payload = http.getString();
+  Serial.println(payload);
+}
+
+
+
+
+
+Serial.print("Sending packet: ");
+  Serial.println(payload);
+
+  // send packet
+  LoRa.beginPacket();
+  LoRa.print(payload);
+  LoRa.endPacket();
+
+
+delay(5000);
+}
+else
+{
+ WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  Serial.print("Connecting to Wi-Fi");
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    Serial.print(".");
+    delay(300);
+  }
+  Serial.println();
+  Serial.print("Connected with IP: ");
+  Serial.println(WiFi.localIP());
+  
+}
+ 
+}
+  
+                            
