@@ -1,0 +1,112 @@
+#include <EEPROM.h>
+#include <SPI.h>
+#include <LoRa.h>
+
+bool settingModeTransfer();
+bool parameterSettingFlag;
+char thresh[5]="";
+int t;
+int threshold;
+
+int cmd = 0;
+void setup() {
+ 
+  pinMode(5,OUTPUT);
+  Serial.begin(9600);
+  Serial.println("Smart Garden");
+
+  if (!LoRa.begin(433E6)) {
+    Serial.println("Starting LoRa failed!");
+    while (1);
+  }
+
+
+if(settingModeTransfer())
+{
+Serial.println(F("In parameter setting mode"));
+Serial.println(F("Enter 4 digit threshold & terminate with $"));
+ Serial.setTimeout(50000);
+int bytesRead=Serial.readBytesUntil('$',thresh,6);
+if(bytesRead)
+{
+  t = (thresh[0]-48)*1000 + (thresh[1]-48)*100 + (thresh[2]-48)*10 + (thresh[3]-48);
+  Serial.println(t);
+  EEPROM.put(0,t);
+  delay(1000);
+  Serial.println("Threshold written to EEPROM. Reset the board.");
+  while(1);
+
+} 
+
+}
+else
+{
+Serial.println("In execution mode");
+EEPROM.get(0,threshold);
+Serial.print("Threshold read from EEPROM: ");
+Serial.println(threshold);
+}
+}
+
+
+
+void loop() {
+  
+  
+ int sm = analogRead(A0);
+  
+ if(sm < threshold)
+ {
+  cmd = 1;
+  digitalWrite(5,HIGH);
+ }
+ else
+ {
+  cmd = 0;
+  digitalWrite(5,LOW);
+ }
+
+  Serial.print("Sending packet: ");
+  Serial.print(sm);
+  Serial.print(",");
+  Serial.println(cmd);
+
+  
+  
+  // send packet
+  LoRa.beginPacket();
+  //LoRa.print("Node2:");
+  LoRa.print(sm);
+  LoRa.print(",");
+  LoRa.print(cmd);
+  LoRa.endPacket();
+ 
+   delay(2000);
+ 
+}
+
+bool settingModeTransfer()
+{
+  Serial.println();
+  Serial.println(F("Type any character to enter parameter setting mode"));
+  unsigned long previousMillis=millis();
+  unsigned long currentMillis;
+  bool timeout=false;
+  
+  while(Serial.available()==0 && timeout==false)
+  {
+  currentMillis=millis();
+  if((unsigned long)(currentMillis-previousMillis) > 7000)
+ timeout=true;
+ Serial.print(".");
+ delay(500);
+ 
+  }
+  if(timeout) 
+  return false;
+  else 
+  {
+    while(Serial.available()) Serial.read();
+    return true;
+  }
+  }

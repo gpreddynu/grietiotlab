@@ -1,0 +1,83 @@
+#include <SPI.h>
+#include <LoRa.h>
+
+const int xInput = A0;
+const int yInput = A1;
+const int zInput = A2;
+
+// initialize minimum and maximum Raw Ranges for each axis
+int RawMin = 0;
+int RawMax = 1023;
+
+int pos = 0;
+
+// Take multiple samples to reduce noise
+const int sampleSize = 10;
+
+
+void setup() 
+{
+  analogReference(EXTERNAL);
+ if (!LoRa.begin(433E6)) {
+    Serial.println("Starting LoRa failed!");
+     while (1);
+  }
+  Serial.begin(9600);
+   
+}
+
+void loop() 
+{
+  //Read raw values
+  int xRaw = 500-ReadAxis(xInput);
+  int yRaw = 500-ReadAxis(yInput);
+  int zRaw = 500-ReadAxis(zInput);
+
+ 
+  Serial.print("X, Y, Z  :: ");
+  Serial.print(xRaw);
+  Serial.print(", ");
+  Serial.print(yRaw);
+  Serial.print(", ");
+  Serial.println(zRaw);
+
+  int minRaw =min(xRaw,min(yRaw,zRaw));
+  Serial.println(minRaw);
+
+   pos='N';
+
+  if(minRaw < 35)
+  {
+  
+  if(minRaw==xRaw) 
+  pos=1;
+  else if(minRaw==yRaw)
+  pos=2;
+  else if(minRaw==zRaw)
+  pos=3;
+  }
+  
+  Serial.println(pos);
+  
+ 
+ 
+Serial.print("Sending packet: ");
+   // send packet
+  LoRa.beginPacket();
+  LoRa.print(pos);
+  LoRa.endPacket();
+  delay(2000);
+}
+
+// Take samples and return the average
+int ReadAxis(int axisPin)
+{
+  long reading = 0;
+  analogRead(axisPin);
+  delay(1);
+  for (int i = 0; i < sampleSize; i++)
+  {
+  reading += analogRead(axisPin);
+  }
+  return reading/sampleSize;
+}

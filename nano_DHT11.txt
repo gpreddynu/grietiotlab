@@ -1,0 +1,42 @@
+#include <dht.h>
+#include <SPI.h>
+#include <LoRa.h>
+
+dht DHT;
+float temperature,humidity;
+
+void setup() {
+  // put your setup code here, to run once:
+Serial.begin(9600);
+ if (!LoRa.begin(433E6)) {
+    Serial.println("Starting LoRa failed!");
+    while (1);
+  }
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+int chk = DHT.read11(6);
+temperature=DHT.temperature;
+humidity=DHT.humidity;
+Serial.println("Ambient temperature = " + String(temperature)+" deg. C");
+Serial.println("Relative humidity   = " + String(humidity)+" %");
+
+
+Serial.print("Sending packet: ");
+Serial.print(temperature);
+Serial.print(",");
+Serial.println(humidity);  
+Serial.println("_______________________________");
+
+  // send packet
+  LoRa.beginPacket();
+  LoRa.print(temperature);
+  LoRa.print(",");
+  LoRa.print(humidity);
+  LoRa.endPacket();
+  
+
+delay(3000);
+
+}

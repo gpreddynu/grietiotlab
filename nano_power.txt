@@ -1,0 +1,82 @@
+#include <SPI.h>
+#include <LoRa.h>
+#include <SoftwareSerial.h>
+SoftwareSerial meter485(3,4);
+byte byteReceived;
+unsigned long cE;
+
+void setup() {
+  // put your setup code here, to run once:
+ Serial.begin(9600);
+  while (!Serial);
+  Serial.println("LoRa Sender");
+  //LoRa.setPins(15,16,5);
+  if (!LoRa.begin(433E6)) {
+    Serial.println("Starting LoRa failed!");
+    while (1);
+  }
+  
+  pinMode(8,OUTPUT);
+  meter485.begin(9600);
+  digitalWrite(8,LOW);
+
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+
+  float power = meterReadingPower();
+  Serial.println(power);
+
+  LoRa.beginPacket();
+  LoRa.print(power);
+  LoRa.endPacket();
+  delay(5000);
+ 
+  
+}
+
+float meterReadingPower()
+{
+  unsigned long res;
+  float r;
+  byte d[]={0x11,0x04,0x00,0x24,0x00,0x02,0x33,0x50};
+    byte result[10];
+    int count=0;
+   
+      
+    digitalWrite(8, HIGH);  // Enable RS485 Transmit   
+  
+    meter485.write(d,8);
+    delay(10);
+    digitalWrite(8, LOW);  // Disable RS485 Transmit       
+  
+  count=0;
+  while(meter485.available())  //Look for data 
+   {
+    byteReceived = meter485.read();    // Read received byte
+    result[count]=byteReceived;
+    count++;
+        }  
+   r=0.0;
+   if(result[3]==0)
+   {
+   res= result[4]*256UL*256UL+result[5]*256UL + result[6];
+   r = res*0.0001;
+  // return (r*0.0001);
+  Serial.print("reslt[3]:");
+  Serial.println(result[3]);
+   Serial.print("reslt[4]:");
+  Serial.println(result[4]);
+ 
+  Serial.print("reslt[5]:");
+  Serial.println(result[5]);
+   Serial.print("reslt[6]:");
+  Serial.println(result[6]);
+   }
+
+  Serial.println(r,4);
+  return r;
+   
+  
+}

@@ -1,0 +1,69 @@
+#include <SPI.h>
+#include <LoRa.h>
+
+int thresholdValue = 85;
+int countVal = 0;
+int gasLeak = 0;
+int windowOpen = 0;
+int i;
+void setup() {
+  // put your setup code here, to run once:
+  Serial.begin(9600);
+  Serial.print("Warm-up..");
+  pinMode(13,OUTPUT);
+  pinMode(A3,OUTPUT);
+  pinMode(A1,INPUT_PULLUP);
+    for(i=0;i<180;i++){
+    digitalWrite(13,!digitalRead(13));
+    Serial.print(".");
+    delay(1000);
+  }
+
+  if (!LoRa.begin(433E6)) {
+    Serial.println("Starting LoRa failed!");
+    while (1);
+  }
+}
+  
+
+
+void loop() {
+  // put your main code here, to run repeatedly:
+
+  int gasValue = analogRead(A0);
+  Serial.println(gasValue);
+  windowOpen = digitalRead(A1);
+  Serial.println(windowOpen);
+
+  if(gasValue > thresholdValue){
+  countVal = countVal+1;
+  if(countVal > 4)
+  {
+    countVal = 0;
+    gasLeak = 1;
+    for(i=0; i < 5;i++){
+    digitalWrite(A3,!digitalRead(A3));
+    LoRa.beginPacket();
+    LoRa.print(gasLeak);
+    LoRa.print(",");
+    LoRa.print(windowOpen);
+    LoRa.endPacket();
+    delay(2000);
+   
+    }
+  }
+  }
+  else
+  {
+   countVal = 0;
+   gasLeak = 0; 
+  }
+
+  LoRa.beginPacket();
+  LoRa.print(gasLeak);
+  LoRa.print(",");
+  LoRa.print(windowOpen);
+  LoRa.endPacket();
+  delay(2000);
+
+}

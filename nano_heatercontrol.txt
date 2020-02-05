@@ -1,0 +1,93 @@
+#include <DS3231.h>
+#include <SPI.h>
+#include <LoRa.h>
+
+
+
+char c;
+bool dollarRecd;
+char dataRead[50];
+int index;
+int i;
+
+
+DS3231  rtc(SDA, SCL);
+String curTime;
+int curTimeCnv;
+int s1,e1,s2,e2;
+String cmdString;
+bool cond1,cond2;
+
+
+void setup() 
+{
+  
+  pinMode(5,OUTPUT);
+  pinMode(13,OUTPUT);
+  Serial.begin(9600);
+  rtc.begin();
+  //rtc.setTime(9, 45, 0);//24 hour format
+
+  Serial.println("LoRa Receiver");
+
+  if (!LoRa.begin(433E6)) {
+    Serial.println("Starting LoRa failed!");
+    while (1);
+  }
+  
+  }
+
+void loop() 
+{
+  // try to parse packet
+  int packetSize = LoRa.parsePacket();
+  if (packetSize) {
+    // received a packet
+    
+
+    // read packet
+    i=0;
+    while (LoRa.available()) {
+      char a = (char)LoRa.read();
+      dataRead[i] = a;
+      i=i+1;
+      }
+      Serial.println(dataRead);
+      cmdString=dataRead;
+      s1= (cmdString.substring(2,4).toInt())*60 + cmdString.substring(5,7).toInt();
+      e1= (cmdString.substring(8,10).toInt())*60 + cmdString.substring(11,13).toInt();
+      s2= (cmdString.substring(14,16).toInt())*60 + cmdString.substring(17,19).toInt();
+      e2= (cmdString.substring(20,22).toInt())*60 + cmdString.substring(23,25).toInt();
+
+      
+      //Serial.println(s2+":"+e2);
+      Serial.println(s1);
+      Serial.println(e1);
+      Serial.println(s2);
+      Serial.println(e2);
+
+      curTime= rtc.getTimeStr();
+  Serial.println(curTime);
+   
+ curTimeCnv = (curTime.substring(0,2).toInt())*60 + curTime.substring(3,5).toInt();
+
+ Serial.println(curTimeCnv);
+
+      cond1 = (curTimeCnv > s1) && (curTimeCnv < e1);
+      cond2 = (curTimeCnv > s2) && (curTimeCnv < e2);
+  
+      if (cond1 || cond2)
+
+      digitalWrite(5,HIGH);
+
+      else
+
+      digitalWrite(5,LOW);
+        
+
+    }
+
+   
+}
+
+ 

@@ -1,0 +1,37 @@
+#include <SPI.h>
+#include <LoRa.h>
+
+int trigPin = 3;//Trig – green Jumper
+int echoPin = 4;    //Echo – yellow Jumper
+long duration, cm, inches;
+void setup() {
+ Serial.begin (9600);
+ Serial.println("LoRa Sender");
+
+  //LoRa.setPins(15,16,5);
+  if (!LoRa.begin(433E6)) {
+    Serial.println("Starting LoRa failed!");
+    while (1);
+  }
+ pinMode(trigPin, OUTPUT);
+ pinMode(echoPin, INPUT);
+}
+void loop() {
+ digitalWrite(trigPin, LOW);
+ delayMicroseconds(5);
+ digitalWrite(trigPin, HIGH);
+ delayMicroseconds(10);
+ digitalWrite(trigPin, LOW);
+ pinMode(echoPin, INPUT);
+ duration = pulseIn(echoPin, HIGH);
+ cm = (duration/2) / 29.1;
+ inches = (duration/2) / 74;
+ Serial.print(cm);
+ Serial.println();
+ delay(350); 
+ LoRa.beginPacket();
+ LoRa.print(cm);
+ LoRa.endPacket();
+ delay(3000);
+ 
+ }
