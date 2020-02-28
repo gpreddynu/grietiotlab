@@ -1,0 +1,47 @@
+#include <SPI.h>
+#include <LoRa.h>
+
+void setup() {
+ 
+  pinMode(5,OUTPUT);
+  pinMode(A3,OUTPUT);
+  digitalWrite(A3,HIGH);
+  Serial.begin(9600);
+  while (!Serial);
+
+  Serial.println("LoRa Receiver");
+
+  if (!LoRa.begin(433E6)) {
+    Serial.println("Starting LoRa failed!");
+    while (1);
+  }
+}
+
+void loop() {
+  // try to parse packet
+  int packetSize = LoRa.parsePacket();
+  if (packetSize) {
+    // received a packet
+    
+
+    // read packet
+    while (LoRa.available()) {
+      char a = (char)LoRa.read();
+      if(a=='1') 
+      {
+        digitalWrite(5,HIGH);
+        digitalWrite(A3,LOW);
+        Serial.println("Lamp ON");
+      }
+      if(a=='0') 
+      {
+        digitalWrite(5,LOW);
+        digitalWrite(A3,HIGH);
+         Serial.println("Lamp OFF");
+      }
+      Serial.println(a);
+    }
+
+    
+  }
+}
